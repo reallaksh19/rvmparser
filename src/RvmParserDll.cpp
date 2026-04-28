@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <exception>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -49,6 +51,12 @@ void setError(char* errorBuffer, int errorBufferSize, const std::string& message
 #else
   std::snprintf(errorBuffer, static_cast<size_t>(errorBufferSize), "%s", message.c_str());
 #endif
+}
+
+std::string safeStoreError(const Store& store)
+{
+  const char* err = store.errorString();
+  return (err && *err) ? std::string(err) : std::string("Unknown parser error.");
 }
 
 std::vector<unsigned char> readBinaryFile(const char* path)
@@ -119,7 +127,7 @@ int runWithStore(
 
     const auto rvmBytes = readBinaryFile(inputRvmPath);
     if (!parseRVM(&store, dllLogger, inputRvmPath, rvmBytes.data(), rvmBytes.size())) {
-      throw std::runtime_error(std::string("Failed to parse RVM: ") + store.errorString());
+      throw std::runtime_error(std::string("Failed to parse RVM: ") + safeStoreError(store));
     }
 
     if (hasText(inputAttPath)) {
